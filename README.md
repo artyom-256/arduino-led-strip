@@ -54,6 +54,8 @@ Remote control provides the following functions:
 ### Circuit Diagram
 ![Circuit Diagram](diagram/arduino-led-strip.png)
 
+⚠️ Note that you need 12V/3A LED strip, not 5V. The image in the cirquit diagram is only a pin connection reference.
+
 ### Tools
 * Arduino Studio 1.8.14
 
