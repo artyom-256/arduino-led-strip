@@ -239,7 +239,11 @@ int currentSpeed = DEFAULT_SPEED_STEP;
  */
 bool isSwitchModeActive = false;
 /**
- * Timeout of the switch mode. Used only in case isSwitchModeActive == true.
+ * Timeout for a blink triggered by blinkLed() in milliseconds.
+ */
+const unsigned long BLINK_TIMEOUT = 150;
+/**
+ * Timeout of the switch mode in milliseconds. Used only in case isSwitchModeActive == true.
  */
 const unsigned long SCENARIO_SWITCH_TIMEOUT = 60000;
 /**
@@ -256,19 +260,16 @@ unsigned long lastScenarioSwitchTimestamp = millis();
  * To make the strip always active set the value equal to TOTAL_PERIOD.
  */
 const unsigned long ACTIVITY_PERIOD = 6 * 60 * 60 * 1000;
-
 /**
  * One cycle of activity/inactivity of LED strip (24 hours).
  */
 const unsigned long TOTAL_PERIOD = 24 * 60 * 60 * 1000;
-
 /**
  * Last timestamp when the activity timer has switched on the LED.
  * Keeping track on this value makes sure the switch is not executed more frequent than TOTAL_PERIOD.
  * Initial value if 0 which means the LED becomes active at the startup.
  */
 unsigned long lastActivitySwitchOnTimestamp = 0;
-
 /**
  * Last timestamp when the activity timer has switched off the LED.
  * Keeping track on this value makes sure the switch is not executed more frequent than TOTAL_PERIOD.
@@ -317,6 +318,25 @@ bool checkActivityPeriod()
  * Receiver to listen to remote control buttons.
  */
 Receiver* rec;
+
+/**
+ * Helper function to make a short blink.
+ */
+void blinkLed()
+{
+    // Light up the LED strip.
+    for (int i = 0; i < NUM_LEDS; i++) {
+      leds[i] = CRGB(255, 255, 255);
+    }
+    FastLED.show();
+    // Short delay.
+    delay(BLINK_TIMEOUT);
+    // Clean up the LED strip.
+    FastLED.clear();
+    FastLED.show();
+    // Short delay.
+    delay(BLINK_TIMEOUT);
+}
 
 /**
  * Helper function that applies action depending on the pressed button.
@@ -401,6 +421,13 @@ bool readReceiverAndProcess()
   if (button == Receiver::Button::ST_REPT) {
     isSwitchModeActive = !isSwitchModeActive;
     lastScenarioSwitchTimestamp = millis();
+    // Blink two times if the switch mode is activated and one time if deactivated.
+    if (isSwitchModeActive) {
+      blinkLed();
+      blinkLed();
+    } else {
+      blinkLed();
+    }
   }
   return false;
 }
@@ -442,6 +469,7 @@ void selectRandomScenario()
     currentScenario = scenario;
     break;
   }
+  currentVariant = random8() % scenarios[currentScenario].numVariants;
 }
 
 /**
@@ -495,8 +523,8 @@ bool sleep(unsigned long milliseconds)
     // Clean up the strip.
     FastLED.clear();
     FastLED.show();
+    // Select a new scenario and a variant.
     selectRandomScenario();
-    currentVariant = random8() % scenarios[currentScenario].numVariants;
     return true;
   }
   // Calculate time adjusted to the current speed value.
