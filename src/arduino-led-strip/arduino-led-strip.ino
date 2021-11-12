@@ -248,6 +248,68 @@ const unsigned long SCENARIO_SWITCH_TIMEOUT = 60000;
 unsigned long lastScenarioSwitchTimestamp = millis();
 
 // ====================================================
+//                   ACTIVITY TIMER
+// ====================================================
+
+/**
+ * Time period in milliseconds when the LED strip should be active.
+ * To make the strip always active set the value equal to TOTAL_PERIOD.
+ */
+const unsigned long ACTIVITY_PERIOD = 6 * 60 * 60 * 1000;
+
+/**
+ * One cycle of activity/inactivity of LED strip (24 hours).
+ */
+const unsigned long TOTAL_PERIOD = 24 * 60 * 60 * 1000;
+
+/**
+ * Last timestamp when the activity timer has switched on the LED.
+ * Keeping track on this value makes sure the switch is not executed more frequent than TOTAL_PERIOD.
+ * Initial value if 0 which means the LED becomes active at the startup.
+ */
+unsigned long lastActivitySwitchOnTimestamp = 0;
+
+/**
+ * Last timestamp when the activity timer has switched off the LED.
+ * Keeping track on this value makes sure the switch is not executed more frequent than TOTAL_PERIOD.
+ * Initial value is (TOTAL_PERIOD - ACTIVITY_PERIOD) wich means the LED should be switched off in ACTIVITY_PERIOD milliseconds.
+ * Although we assign a negative value to the unsigned long, when we calculate a difference with the current timestamp,
+ * this will give us a correct result.
+ */
+unsigned long lastActivitySwitchOffTimestamp = static_cast<unsigned long>(-(TOTAL_PERIOD - ACTIVITY_PERIOD));
+
+/**
+ * Check current timestamp and take a decision to switch on or off the LED strip.
+ * If ACTIVITY_PERIOD < TOTAL_PERIOD, the LED strip will be switched on for the first ACTIVITY_PERIOD milliseconds
+ * from the startup and switched off for the rest (TOTAL_PERIOD - ACTIVITY_PERIOD) milliseconds.
+ * However, it is possible to forcibly change activity state using power on/off button on the remote control.
+ * @return True if the activity timer has just switched off the LED strip.
+ */
+bool checkActivityPeriod()
+{
+  // Do nothing if the activity timer is disabled.
+  if (ACTIVITY_PERIOD >= TOTAL_PERIOD) {
+    return;
+  }
+  // Perform an action basing on the current timestamp.
+  unsigned long currentTime = millis();
+  if (currentTime - lastActivitySwitchOnTimestamp >= TOTAL_PERIOD) {
+    // If TOTAL_PERIOD has passed since the last time the LED was switched on by the timer - switch it on again.
+    isSwitchedOn = true;
+    // Remember the last switch on timestamp.
+    lastActivitySwitchOnTimestamp = currentTime;
+  }
+  if (currentTime - lastActivitySwitchOffTimestamp >= TOTAL_PERIOD) {
+    // If TOTAL_PERIOD has passed since the last time the LED was switched off by the timer - switch it off again.
+    isSwitchedOn = false;
+    // Remember the last switch off timestamp.
+    lastActivitySwitchOffTimestamp = currentTime;
+    return true;
+  }
+  return false;
+}
+
+// ====================================================
 //                 ADDITIONAL FUNCTIONS
 // ====================================================
 
@@ -449,10 +511,17 @@ bool sleep(unsigned long milliseconds)
   }
   // Emulate delay() constantly looking for the remote control signal.
   unsigned long startTime = millis();
-  // Make sure we process input at least once.
+  // Make sure we process input and activity timer at least once.
   do {
     if (readReceiverAndProcess()) {
       // If the signal forces us to cancel the scenario, return true.
+      return true;
+    }
+    if (checkActivityPeriod()) {
+      // Clean up the strip.
+      FastLED.clear();
+      FastLED.show();
+      // If the timer forces us to cancel the scenario, return true.
       return true;
     }
   } while (millis() - startTime <= adjustedTime);
@@ -813,6 +882,8 @@ void setup()
 
 void loop()
 {
+  // Switch on or off the LED strip basing on activity periods.
+  checkActivityPeriod();
   // Process input from the remote control.
   readReceiverAndProcess();
   // Execute the current scenario.
