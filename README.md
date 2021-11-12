@@ -21,6 +21,7 @@ Additional functions are:
 * Control of brightness (4 levels)
 * Control of animation speed (5 levels)
 * Random animation switch by timeout (1 minute)
+* Activation/deactivation by timeout.
 
 ![Image](image_1.jpg)
 
@@ -32,8 +33,10 @@ Remote control provides the following functions:
 * VOL+/VOL- - Adjust briteness.
 * UP/DOWN - Adjust animation speed.
 * FAST FORWARD/BACK - Select animation variant (color).
-* ST/REPT - Toggle random animation mode (change every 1 minute).
+* ST/REPT - Toggle random animation mode (every minute). When pressing the button a double blink indicates that the switch mode is turned on and a single blink - turned off.
 * 0-9 - Select animation scenario.
+
+Activation and deactivation by timeout is adjusted using ACTIVITY_PERIOD and TOTAL_PERIOD variables. By default the LED strip is active 6 hours after startup and then switches off for 18 more hours.
 
 ### Equipment
 * Arduino Nano Atmega328P - x1
