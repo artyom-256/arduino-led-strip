@@ -259,11 +259,11 @@ unsigned long lastScenarioSwitchTimestamp = millis();
  * Time period in milliseconds when the LED strip should be active.
  * To make the strip always active set the value equal to TOTAL_PERIOD.
  */
-const unsigned long ACTIVITY_PERIOD = 6 * 60 * 60 * 1000;
+const unsigned long ACTIVITY_PERIOD = 6 * 60 * 60 * 1000UL;
 /**
  * One cycle of activity/inactivity of LED strip (24 hours).
  */
-const unsigned long TOTAL_PERIOD = 24 * 60 * 60 * 1000;
+const unsigned long TOTAL_PERIOD = 24 * 60 * 60 * 1000UL;
 /**
  * Last timestamp when the activity timer has switched on the LED.
  * Keeping track on this value makes sure the switch is not executed more frequent than TOTAL_PERIOD.
